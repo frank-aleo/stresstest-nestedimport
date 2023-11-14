@@ -9,39 +9,28 @@ do
 
   # echo output to terminal
   echo "$deploy_output"
-  # echo "$deploy_output" > "deployment_response_0.txt"
 
   # extract the transaction ID from the deploy output
   tx_id=$(echo "$deploy_output" | sed -n 's/.*deployment \(at[0-9a-z]\{40,\}\).*/\1/p')
   echo "$tx_id"
 
-  # initialize a variable to control the while loop
   response_received=false
-
-  # loop until the transaction response is received
   while [[ "$response_received" == "false" ]]
-  do
-    response=$(curl "http://localhost:3033/testnet3/transaction/broadcast/$tx_id")
-
-    if [[ "$response" == "Invalid URL: invalid checksum" ]]; then
-      echo "invalid response for transaction $tx_id: $response"
-      echo "trying again"
+    do
+      response=$(curl -s "http://localhost:3033/testnet3/transaction/$tx_id")
       sleep 10
-      break
-    elif [[ "$response" == "Something went wrong: Missing transaction for ID $tx_id:" ]]; then
-      echo "something went wrong: Missing transaction for ID $tx_id:"
-      echo "trying again"
-      sleep 10
-      break
-    elif [[ ! -z "$response" ]]; then
-      echo "Successful response for transaction $tx_id: $response"
-      response_received=true
-    else
-      echo "waiting for response for transaction $tx_id..."
-      echo "trying again"
-      sleep 10
-    fi
-  done
+      echo "$response" | tr -d '\000-\031'
+      echo "$response" | tr -d '\000-\031' | jq . >/dev/null 2>&1
+      if [[ $? -eq 0 ]]; then
+        echo "successful response for transaction $tx_id: $response"
+        response_received=true
+        break
+      else
+        echo "\nWaiting for response for transaction $tx_id..."
+        sleep 10
+        continue
+      fi
+    done
 
   echo "Moving to the next deployment..."
 done
@@ -99,81 +88,34 @@ echo "All deployments are done."
 
 
 
-
-
-
-
-# #!/bin/zsh
-
-# for i in {0..2}
-# do
-#   echo "deploying program_layer_$i"
-
-#   # save the output of the deploy command to a variable
-#   deploy_output=$(snarkos developer deploy "program_layer_$i.aleo" --private-key "APrivateKey1zkpBjpEgLo4arVUkQmcLdKQMiAKGaHAQVVwmF8HQby8vdYs" --query "http://localhost:3033" --path "program_layer_$i" --broadcast "http://localhost:3033/testnet3/transaction/broadcast" --priority-fee 0)
-
-#   # echo output to terminal and save to file (optional)
-#   echo "$deploy_output"
-#   # echo "$deploy_output" > "deployment_response_$i.txt"
-
-#   # extract the transaction ID from the deploy output
-#   tx_id=$(echo "$deploy_output" | grep -o 'at[0-9a-z]\+')
-#   echo "$tx_id"
-
-#   # initialize a variable to control the while loop
-#   response_received=false
-
-#   # loop until the transaction response is received
-#   while [ "$response_received" == "false" ]
-#   do
-#     # check the transaction status
-#     response=$(curl -s "http://localhost:3033/testnet3/transaction/broadcast/$tx_id")
-
-#     # if the response is not empty, set the flag to true and break the loop
-#     if [[ "$response" == *"Invalid URL: invalid checksum"* ]]; then
-#       echo "invalid response for transaction $tx_id: $response"
-#       break
-    
-#     # if response doesn't contain the error message, assume valid
-#     elif [ ! -z "$response" ]; then
-#       echo "successful response for transaction $tx_id: $response"
-#       response_received=true
-#       break
-
-#     else
-#       echo "waiting for response for transaction $tx_id..."
-#       sleep 5
-
-#     fi
-#   done
-  
-#   echo "moving to the next deployment..."
-# done
-
-# echo "all deployments are done"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # # save the output of the deploy command to a variable
 # deploy_output=$(snarkos developer deploy "program_layer_0.aleo" --private-key "APrivateKey1zkpBjpEgLo4arVUkQmcLdKQMiAKGaHAQVVwmF8HQby8vdYs" --query "http://localhost:3033" --path "program_layer_0" --broadcast "http://localhost:3033/testnet3/transaction/broadcast" --priority-fee 0)
 
 # # echo output to terminal
 # echo "$deploy_output"
-# echo "$deploy_output" > "deployment_response_0.txt"
+# # echo "$deploy_output" > "deployment_response_0.txt"
 
 # # extract the transaction ID from the deploy output
 # tx_id=$(echo "$deploy_output" | sed -n 's/.*deployment \(at[0-9a-z]\{40,\}\).*/\1/p')
 # echo "$tx_id"
 
-# echo curl "http://localhost:3033/testnet3/transaction/$tx_id"
+# # testing
+# response=$(curl -s "http://localhost:3033/testnet3/transaction/$tx_id")
+# echo "$response"
+
+# response_received=false
+# while [[ "$response_received" == "false" ]]
+#   do
+#     response=$(curl -s "http://localhost:3033/testnet3/transaction/$tx_id")
+#     echo "$response" | tr -d '\000-\031'
+#     echo "$response" | tr -d '\000-\031' | jq . >/dev/null 2>&1
+#     if [[ $? -eq 0 ]]; then
+#       echo "successful response for transaction $tx_id: $response"
+#       response_received=true
+#       break
+#     else
+#       echo "\nWaiting for response for transaction $tx_id..."
+#       sleep 10
+#       continue
+#     fi
+#   done
